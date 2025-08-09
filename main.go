@@ -1,7 +1,7 @@
 package main
 
-import "fmt"
+import "morpher-agent/cmd"
 
 func main() {
-	fmt.Println("Hello morpher-vm!")
+	cmd.Execute()
 }
