@@ -1,3 +1,6 @@
+GIT_COMMIT := $(shell git rev-parse HEAD)
+BUILD_DATE := $(shell date +%Y-%m-%dT%H:%M:%S%z)
+
 BIN_DIR := bin
 
 $(BIN_DIR):
@@ -26,13 +29,21 @@ fmt:
 .PHONY: build
 build: deps
 	@echo "Building morpher-agent..."
-	go build -o $(BIN_DIR)/morpher-agent main.go
+	@echo "GIT_COMMIT=$(GIT_COMMIT)"
+	@echo "BUILD_DATE=$(BUILD_DATE)"
+	go build -ldflags="-s -w -X morpher-agent/internal/version.GitCommit=$(GIT_COMMIT) -X morpher-agent/internal/version.BuildDate=$(BUILD_DATE)" -o $(BIN_DIR)/morpher-agent main.go
 	@echo "Done"
 
 # Run all tests.
 .PHONY: test
 test:
-	@echo "Running tests..."
+	go test -v ./...
+
+# Run tests with coverage.
+.PHONY: test-coverage
+test-coverage:
+	go test -v -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out
 
 # Clean up test artifacts.
 .PHONY: clean
