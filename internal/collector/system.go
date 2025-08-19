@@ -141,7 +141,7 @@ func CollectNetwork() (*NetworkInfo, error) {
 	if ifaces, err := net.Interfaces(); err == nil {
 		out.Interfaces = make([]NetworkInterface, 0, len(ifaces))
 		for _, iface := range ifaces {
-			// IP addresses collection
+			// IP addresses collection.
 			var addrs []string
 			for _, addr := range iface.Addrs {
 				if addr.Addr == "" ||
@@ -152,7 +152,7 @@ func CollectNetwork() (*NetworkInfo, error) {
 				addrs = append(addrs, addr.Addr)
 			}
 
-			// Skip interfaces without addresses
+			// Skip interfaces without addresses.
 			if len(addrs) == 0 {
 				continue
 			}
