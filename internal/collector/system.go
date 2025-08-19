@@ -189,10 +189,3 @@ func skipMount(m string) bool {
 	}
 	return false
 }
-
-func firstNonEmpty(a, b string) string {
-	if a != "" {
-		return a
-	}
-	return b
-}
