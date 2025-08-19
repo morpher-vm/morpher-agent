@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"fmt"
 	"net"
 	"runtime"
 	"strings"
@@ -187,10 +188,10 @@ func CollectNetwork() (*NetworkInfo, error) {
 	return &out, nil
 }
 
-func CollectBiosId() (*string, error) {
+func CollectBiosID() (*string, error) {
 	id, err := host.HostID()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get host ID: %w", err)
 	}
 
 	return &id, nil
@@ -222,13 +223,13 @@ func CollectSystem() (*SystemInfo, error) {
 		return nil, err
 	}
 
-	biosId, err := CollectBiosId()
+	biosID, err := CollectBiosID()
 	if err != nil {
 		return nil, err
 	}
 
 	return &SystemInfo{
-		ID:      biosId,
+		ID:      biosID,
 		OS:      os,
 		CPU:     cpu,
 		RAM:     ram,
