@@ -27,10 +27,6 @@ func Run(ctx context.Context, serverURL string) error {
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
-	if _, err := collector.CollectSystem(); err != nil {
-		return err
-	}
-
 	for {
 		select {
 		case <-ctx.Done():
