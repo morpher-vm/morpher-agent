@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"net"
 	"runtime"
 	"strings"
 
@@ -8,7 +9,7 @@ import (
 	"github.com/shirou/gopsutil/v4/disk"
 	"github.com/shirou/gopsutil/v4/host"
 	"github.com/shirou/gopsutil/v4/mem"
-	"github.com/shirou/gopsutil/v4/net"
+	gnet "github.com/shirou/gopsutil/v4/net"
 )
 
 type OSInfo struct {
@@ -138,36 +139,50 @@ func CollectDisk() (*DiskInfo, error) {
 func CollectNetwork() (*NetworkInfo, error) {
 	var out NetworkInfo
 
-	if ifaces, err := net.Interfaces(); err == nil {
+	if ifaces, err := gnet.Interfaces(); err == nil {
 		out.Interfaces = make([]NetworkInterface, 0, len(ifaces))
 		for _, iface := range ifaces {
-			// IP addresses collection.
-			var addrs []string
-			for _, addr := range iface.Addrs {
-				if addr.Addr == "" ||
-					strings.HasPrefix(addr.Addr, "127.") ||
-					strings.HasPrefix(addr.Addr, "fe80:") {
-					continue
+			// Skip interfaces that are down or loopback.
+			has := func(w string) bool {
+				for _, f := range iface.Flags {
+					if strings.EqualFold(f, w) {
+						return true
+					}
 				}
-				addrs = append(addrs, addr.Addr)
+				return false
 			}
-
-			// Skip interfaces without addresses.
-			if len(addrs) == 0 {
+			if !has("up") || has("loopback") {
 				continue
 			}
 
-			netIface := NetworkInterface{
+			var addrs []string
+			for _, a := range iface.Addrs {
+				ip := a.Addr
+				if i := strings.IndexByte(ip, '%'); i != -1 {
+					ip = ip[:i]
+				}
+				if j := strings.IndexByte(ip, '/'); j != -1 {
+					ip = ip[:j]
+				}
+
+				p := net.ParseIP(ip)
+				if ip == "" || p == nil || p.IsLoopback() || p.IsMulticast() ||
+					p.IsUnspecified() || p.IsLinkLocalUnicast() || p.IsLinkLocalMulticast() {
+					continue
+				}
+				addrs = append(addrs, ip)
+			}
+			if len(addrs) == 0 {
+				continue
+			}
+			out.Interfaces = append(out.Interfaces, NetworkInterface{
 				Name:         iface.Name,
 				HardwareAddr: iface.HardwareAddr,
 				MTU:          iface.MTU,
 				Addrs:        addrs,
-			}
-
-			out.Interfaces = append(out.Interfaces, netIface)
+			})
 		}
 	}
-
 	return &out, nil
 }
 
