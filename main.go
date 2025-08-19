@@ -10,8 +10,6 @@ import (
 )
 
 func main() {
-	// cmd.Execute()
-
 	ctx, cancel := context.WithCancel(context.Background())
 
 	sigCh := make(chan os.Signal, 1)

@@ -31,7 +31,7 @@ build: deps
 	@echo "Building morpher-agent..."
 	@echo "GIT_COMMIT=$(GIT_COMMIT)"
 	@echo "BUILD_DATE=$(BUILD_DATE)"
-	go build -ldflags="-s -w -X morpher-agent/internal/version.GitCommit=$(GIT_COMMIT) -X morpher-agent/internal/version.BuildDate=$(BUILD_DATE)" -o $(BIN_DIR)/morpher-agent main.go
+	go build -ldflags="-s -w" -o $(BIN_DIR)/morpher-agent main.go
 	@echo "Done"
 
 # Run all tests.
