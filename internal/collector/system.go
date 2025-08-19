@@ -188,7 +188,7 @@ func CollectNetwork() (*NetworkInfo, error) {
 	return &out, nil
 }
 
-func CollectBiosID() (*string, error) {
+func CollectHostID() (*string, error) {
 	id, err := host.HostID()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get host ID: %w", err)
@@ -223,13 +223,13 @@ func CollectSystem() (*SystemInfo, error) {
 		return nil, err
 	}
 
-	biosID, err := CollectBiosID()
+	hostID, err := CollectHostID()
 	if err != nil {
 		return nil, err
 	}
 
 	return &SystemInfo{
-		ID:      biosID,
+		ID:      hostID,
 		OS:      os,
 		CPU:     cpu,
 		RAM:     ram,
