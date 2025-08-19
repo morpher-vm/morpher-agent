@@ -8,6 +8,7 @@ import (
 	"github.com/shirou/gopsutil/v4/disk"
 	"github.com/shirou/gopsutil/v4/host"
 	"github.com/shirou/gopsutil/v4/mem"
+	"github.com/shirou/gopsutil/v4/net"
 )
 
 type OSInfo struct {
@@ -41,11 +42,23 @@ type DiskMount struct {
 	UsedPercent float64 `json:"used_percent"`
 }
 
+type NetworkInterface struct {
+	Name         string   `json:"name"`
+	HardwareAddr string   `json:"hardware_addr"`
+	MTU          int      `json:"mtu"`
+	Addrs        []string `json:"addrs"`
+}
+
+type NetworkInfo struct {
+	Interfaces []NetworkInterface `json:"interfaces"`
+}
+
 type SystemInfo struct {
-	OS   *OSInfo   `json:"os"`
-	CPU  *CPUInfo  `json:"cpu"`
-	RAM  *RAMInfo  `json:"ram"`
-	Disk *DiskInfo `json:"disk"`
+	OS      *OSInfo      `json:"os"`
+	CPU     *CPUInfo     `json:"cpu"`
+	RAM     *RAMInfo     `json:"ram"`
+	Disk    *DiskInfo    `json:"disk"`
+	Network *NetworkInfo `json:"network"`
 }
 
 func CollectOS() (*OSInfo, error) {
@@ -122,6 +135,42 @@ func CollectDisk() (*DiskInfo, error) {
 	return &out, nil
 }
 
+func CollectNetwork() (*NetworkInfo, error) {
+	var out NetworkInfo
+
+	if ifaces, err := net.Interfaces(); err == nil {
+		out.Interfaces = make([]NetworkInterface, 0, len(ifaces))
+		for _, iface := range ifaces {
+			// IP addresses collection
+			var addrs []string
+			for _, addr := range iface.Addrs {
+				if addr.Addr == "" ||
+					strings.HasPrefix(addr.Addr, "127.") ||
+					strings.HasPrefix(addr.Addr, "fe80:") {
+					continue
+				}
+				addrs = append(addrs, addr.Addr)
+			}
+
+			// Skip interfaces without addresses
+			if len(addrs) == 0 {
+				continue
+			}
+
+			netIface := NetworkInterface{
+				Name:         iface.Name,
+				HardwareAddr: iface.HardwareAddr,
+				MTU:          iface.MTU,
+				Addrs:        addrs,
+			}
+
+			out.Interfaces = append(out.Interfaces, netIface)
+		}
+	}
+
+	return &out, nil
+}
+
 func CollectSystem() (*SystemInfo, error) {
 	os, err := CollectOS()
 	if err != nil {
@@ -143,11 +192,17 @@ func CollectSystem() (*SystemInfo, error) {
 		return nil, err
 	}
 
+	network, err := CollectNetwork()
+	if err != nil {
+		return nil, err
+	}
+
 	return &SystemInfo{
-		OS:   os,
-		CPU:  cpu,
-		RAM:  ram,
-		Disk: disk,
+		OS:      os,
+		CPU:     cpu,
+		RAM:     ram,
+		Disk:    disk,
+		Network: network,
 	}, nil
 }
 
