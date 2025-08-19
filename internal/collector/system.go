@@ -11,6 +11,7 @@ import (
 )
 
 type OSInfo struct {
+	HostName      string `json:"hostname"`
 	Name          string `json:"name"`
 	Version       string `json:"version"`
 	KernelVersion string `json:"kernel_version"`
@@ -51,6 +52,7 @@ func CollectOS() (*OSInfo, error) {
 	var out OSInfo
 
 	if hi, err := host.Info(); err == nil {
+		out.HostName = hi.Hostname
 		out.Name = titleOrRaw(hi.Platform)
 		out.Version = hi.PlatformVersion
 		out.KernelVersion = hi.KernelVersion
