@@ -55,6 +55,7 @@ type NetworkInfo struct {
 }
 
 type SystemInfo struct {
+	ID      *string      `json:"id"`
 	OS      *OSInfo      `json:"os"`
 	CPU     *CPUInfo     `json:"cpu"`
 	RAM     *RAMInfo     `json:"ram"`
@@ -186,6 +187,15 @@ func CollectNetwork() (*NetworkInfo, error) {
 	return &out, nil
 }
 
+func CollectBiosId() (*string, error) {
+	id, err := host.HostID()
+	if err != nil {
+		return nil, err
+	}
+
+	return &id, nil
+}
+
 func CollectSystem() (*SystemInfo, error) {
 	os, err := CollectOS()
 	if err != nil {
@@ -212,7 +222,13 @@ func CollectSystem() (*SystemInfo, error) {
 		return nil, err
 	}
 
+	biosId, err := CollectBiosId()
+	if err != nil {
+		return nil, err
+	}
+
 	return &SystemInfo{
+		ID:      biosId,
 		OS:      os,
 		CPU:     cpu,
 		RAM:     ram,
