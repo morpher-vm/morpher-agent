@@ -32,6 +32,12 @@ chmod +x install_arm64.sh
 sudo MORPHER_CONTROLLER_IP=<controller-ip> ./install_arm64.sh
 ```
 
+### Verify
+```bash
+systemctl status morpher-agent --no-pager
+journalctl -u morpher-agent -e --no-pager
+```
+
 ## Environment Variables
 
 - `MORPHER_CONTROLLER_IP`: The IP address of the Morpher controller to connect to.
@@ -45,6 +51,15 @@ sudo systemctl start morpher-agent
 sudo systemctl enable morpher-agent
 sudo systemctl status morpher-agent
 sudo journalctl -u morpher-agent -f
+```
+
+## Delete agent
+```bash
+sudo systemctl disable --now morpher-agent
+sudo rm -f /etc/systemd/system/morpher-agent.service
+sudo rm -rf /etc/morpher-agent
+sudo rm -f /usr/local/bin/morpher-agent
+sudo systemctl daemon-reload
 ```
 
 ## License
