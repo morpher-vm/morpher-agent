@@ -18,10 +18,26 @@ tmpdir="$(mktemp -d)"; trap 'rm -rf "$tmpdir"' EXIT
 echo "[*] Download ${DL_URL}"
 curl -fsSL -o "${tmpdir}/asset.tgz" "${DL_URL}"
 
+# Download and verify checksum
+cs_url="${BASE_URL}/download/${VERSION}/checksums.txt"
+[[ "${VERSION}" == "latest" ]] && cs_url="https://github.com/${REPO}/releases/latest/download/checksums.txt"
+
+curl -fsSL -o "${tmpdir}/checksums.txt" "${cs_url}"
+
+line="$(grep -E "  ${ASSET_FILE}\$" "${tmpdir}/checksums.txt" || true)"
+if [[ -z "${line}" ]]; then
+  echo "[X] ${ASSET_FILE} entry not found in checksums.txt (${cs_url})"
+  exit 1
+fi
+
+hash="$(echo "${line}" | awk '{print $1}')"
+echo "[*] Verifying checksum for ${ASSET_FILE}"
+echo "${hash}  asset.tgz" | (cd "${tmpdir}" && sha256sum -c -)
+
 echo "[*] Extract"
 tar -xzf "${tmpdir}/asset.tgz" -C "${tmpdir}"
 
-bin_path="$(find "${tmpdir}" -type f -perm -u+x -name "${SERVICE_NAME}" | head -n1)"
+bin_path="$(find "${tmpdir}" -type f -executable -name "${SERVICE_NAME}" | head -n1)"
 [[ -z "${bin_path}" ]] && { echo "binary not found: ${SERVICE_NAME}"; exit 1; }
 
 echo "[*] Install -> ${INSTALL_DIR}"
@@ -33,6 +49,7 @@ install -d "${CONFIG_DIR}"
 cat > "${CONFIG_DIR}/${SERVICE_NAME}.env" <<EOF
 MORPHER_AGENT_BASE_URL=http://${MORPHER_CONTROLLER_IP}:9000
 EOF
+chmod 600 "${CONFIG_DIR}/${SERVICE_NAME}.env"
 
 unit="/etc/systemd/system/${SERVICE_NAME}.service"
 echo "[*] systemd unit -> ${unit}"
